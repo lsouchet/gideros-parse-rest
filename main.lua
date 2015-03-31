@@ -1,5 +1,4 @@
 require "ParseLib"
-
 local parse = ParseLib.new(appId, apiKey)
 
 --Login
@@ -23,12 +22,23 @@ local function testAddScore(success)
 	end
 end
 
--- Add score at specified level for logged in user.
---[[parse:login("10152817179103304", 
-	function(success) 
-		if (success) then parse:addScore("2", "1000", testAddScore) end
-	end)
---]]
+
+--Add score at specified level for logged in user.
+--local l = {
+--{level = "4", score = "1300"},
+--{level = "6", score = "2500"},
+--{level = "12", score = "240"},
+--{level = "8", score = "100"}}
+--print("do")
+--for k, v in ipairs(l) do
+--	print(v.level, v.score)
+--end
+--
+--parse:login("10152817179103304",
+--	function(success)
+--		if (success) then print("addScore") parse:addScore(l, testAddScore) end
+--	end)
+
 
 --Get score
 local function testGetScore(success, scoreList)

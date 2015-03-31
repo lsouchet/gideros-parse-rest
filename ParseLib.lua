@@ -233,15 +233,34 @@ function ParseLib:addScore(levelScorePair, callback, params)
 		end
 		return
 	end
+	self.currentAddScore = levelScorePair
+	for k, v in ipairs(levelScorePair) do
+		self:internalAddScore(v.level, v.score, callback, params)
+	end
 end
 
 onAddScoreComplete = function(request, event)
 	local callback = request.userRequest["Callback"]
 	local params = request.userRequest["Param"]
-	if callback then
+	local level = request.userRequest["Level"]
+	local score = request.userRequest["Score"]
+	local callCallback = true
+	if request.self.currentAddScore then
+		callCallback = false
+		for k, v in ipairs(request.self.currentAddScore) do
+			if v.level == level then
+				table.remove(request.self.currentAddScore, k)
+				break
+			end
+		end
+		if #request.self.currentAddScore < 1 then
+			callCallback = true
+		end
+	end
+	if callback and callCallback == true then
     	callback(true, params)
     else
-		print("ParseLib.onAddScoreComplete")
+		print("ParseLib.onAddScoreComplete", level, score)
     end
 end
 
@@ -281,7 +300,8 @@ function ParseLib:internalAddScore(level, score, callback, params)
 		local params = request.userRequest["Param"]
 		local localScore = score
 		if success == true then
-			self:updateScore(localScore[1].objectId, request.userRequest["Score"], callback, params)
+			self:updateScore(localScore[1].objectId, request.userRequest["Score"], request.userRequest["Level"],
+				callback, params)
 		else
 			self:insertScore(request.userRequest["Score"], request.userRequest["Level"], callback, params)
 		end
@@ -289,31 +309,7 @@ function ParseLib:internalAddScore(level, score, callback, params)
 	self:getScore(level, nil, insertScoreSwitch, request)
 end
 
-
-
-onUpdateScoreComplete = function(request, event)
-	local callback = request.userRequest["Callback"]
-	local params = request.userRequest["Param"]
-	local score = Json.decode(event.data)
-	local success = (score.quantity ~= nil)
-	if callback then
-		callback(success, params)
-	else
-		print("ParseLib.updateScore: ", success)
-	end
-end
-
-onUpdateScoreError = function(request)
-	local callback = request.userRequest["Callback"]
-	local params = request.userRequest["Param"]
-	if callback then
-		callback(false, params)
-	else
-		print("ParseLib.insertScore failed to connect")
-	end
-end
-
-function ParseLib:updateScore(scoreObjectId, score, callback, params)
+function ParseLib:updateScore(scoreObjectId, score, level, callback, params)
 	--print("ParseLib.updateScore", scoreObjectId, score)
 	local headers = self:getPostHeader()
 	local body = '{"score":'..score..',"quantity":{"__op":"Increment","amount":1}}'
@@ -322,31 +318,11 @@ function ParseLib:updateScore(scoreObjectId, score, callback, params)
 	request.userRequest = {}
 	request.userRequest["Callback"] = callback
 	request.userRequest["Param"] = params
+	request.userRequest["Level"] = level
+	request.userRequest["Score"] = score
 	request.self = self
 	loader:addEventListener(Event.COMPLETE, onAddScoreComplete, request)
 	loader:addEventListener(Event.ERROR, onAddScoreError, request)
-end
-
-onInsertScoreComplete = function(request, event)
-	local callback = request.userRequest["Callback"]
-	local params = request.userRequest["Param"]
-	local score = Json.Decode(event.data)
-	local success = (score.objectId ~= nil)
-	if callback then
-			callback(success, params)
-	else
-		print("ParseLib.insertScore: ", success)
-	end
-end
-
-onInsertScoreError = function(request)
-	local callback = request.userRequest["Callback"]
-	local params = request.userRequest["Param"]
-	if callback then
-			callback(false, params)
-	else
-		print("ParseLib.insertScore failed to connect")
-	end
 end
 
 function ParseLib:insertScore(score, level, callback, params)
@@ -358,7 +334,9 @@ function ParseLib:insertScore(score, level, callback, params)
 	request.userRequest = {}
 	request.userRequest["Callback"] = callback
 	request.userRequest["Param"] = params
+	request.userRequest["Level"] = level
+	request.userRequest["Score"] = score
 	request.self = self
-	loader:addEventListener(Event.COMPLETE, onInsertScoreComplete, request)
-	loader:addEventListener(Event.ERROR, onInsertScoreError, request)
+	loader:addEventListener(Event.COMPLETE, onAddScoreComplete, request)
+	loader:addEventListener(Event.ERROR, onAddScoreError, request)
 end
