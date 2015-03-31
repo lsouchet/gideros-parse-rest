@@ -32,9 +32,17 @@
 ParseLib = Core.class()
 --Required to create page post data.
 
-function ParseLib:init(appId, apiKey)
-	self.scoreClass = "ScoreTest"
-	self.playerClass = "PlayerTest"
+function ParseLib:init(appId, apiKey, scoreTable, playerTable)
+	if scscoreTable then
+		self.scoreTable = scoreTable
+	else
+		self.scoreClass = "ScoreTest"
+	end
+	if playerTable then
+		self.playerClass = playerTable
+	else
+		self.playerClass = "PlayerTest"
+	end
 	self.baseUrl = "https://api.parse.com/1/classes/"
 	self.urls = {score = self.baseUrl..self.scoreClass, player = self.baseUrl..self.playerClass}
 	self.headerAppId = {name = "X-Parse-Application-Id", key = appId}

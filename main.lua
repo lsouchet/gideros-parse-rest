@@ -1,5 +1,5 @@
 require "ParseLib"
-local parse = ParseLib.new(appId, apiKey)
+local parse = ParseLib.new(appId, apiKey, "ScoreTest", "PlayerTest")
 
 --Login
 local function testLogin(success, userId)
