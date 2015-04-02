@@ -1,17 +1,52 @@
 require "ParseLib"
-local parse = ParseLib.new(appId, apiKey, "ScoreTest", "PlayerTest")
 
---Login
-local function testLogin(success, userId)
-	if (success) then
-		print("User ", userId.facebookId, "successfully logged in")
-	else
-		print("Unable to log user")
-	end
+print("***********************PARSELIB TESTS*****************\n")
+Test = Core.class()
+function Test:init(testName)
+	self.testName = testName
+	self.parse = ParseLib.new(appId, apiKey, "ScoreTest", "PlayerTest")
 end
 
--- Login new user with provided facebook Id
---Timer.delayedCall(1000, function() parse:login("10152817179103304", testLogin) end)
+--Ctor
+TestCtor = Core.class(Test)
+function TestCtor:init(testName)
+	self.parse = nil
+	self.parse = ParseLib.new(appId, apiKey)
+	if (self.parse.scoreClass == "Score" and self.parse.playerClass == "Player") then
+		print(self.testName.." SUCCESS")
+	else
+		print(self.testName.." FAILURE: ", "("..self.parse.scoreClass.." == Score and "..self.parse.playerClass.." == Player)")
+	end
+end
+test = TestCtor.new("TestCtor")
+
+--Ctor Params
+TestCtorParams = Core.class(Test)
+function TestCtorParams:init(testName)
+	self.parse = nil
+	self.parse = ParseLib.new(appId, apiKey, "ScoreTest", "PlayerTest")
+	if (self.parse.scoreClass == "ScoreTest" and self.parse.playerClass == "PlayerTest") then
+		print(self.testName.." SUCCESS")
+	else
+		print(self.testName.." FAILURE: ", "("..self.parse.scoreClass.." == ScoreTest and "..self.parse.playerClass.." == PlayerTest)")
+	end
+end
+test = TestCtorParams.new("TestCtor")
+
+--Login
+TestLogin = Core.class(Test)
+function TestLogin:init(testName)
+	local function callback(success, userId)
+		if (success and self.parse.userObjectId ~= nil and self.parse.currentFacebookId == self.facebookId) then
+			print(self.testName.." SUCCESS")
+		else
+			print(self.testName.." FAILURE: ", "("..tostring(success).." and "..tostring(self.parse.userObjectId).." ~= nil and "..tostring(self.parse.currentFacebookId).." == "..self.facebookId..")")
+		end
+	end
+	self.facebookId = "10152817179103304"
+	self.parse:login(self.facebookId, callback)
+end
+test = TestLogin.new("TestLogin")
 
 --addScore
 local function testAddScore(success)
