@@ -271,15 +271,16 @@ function ParseLib:addScore(levelScorePair, callback, params)
 	end
 	self.currentAddScore = levelScorePair
 	for k, v in ipairs(levelScorePair) do
-		self:internalAddScore(v.level, v.score, callback, params)
+		self:handleScore(v.level, v.score, callback, params)
 	end
 end
 
-onAddScoreComplete = function(request, event)
+onHandleScoreComplete = function(request, event)
 	local callback = request.userRequest["Callback"]
 	local params = request.userRequest["Param"]
-	local level = request.userRequest["Level"]
-	local score = request.userRequest["Score"]
+	local result = Json.Decode(event.data)
+	local level = result.result.level
+	local score = result.result.score
 	local callCallback = true
 	if request.self.currentAddScore then
 		callCallback = false
@@ -296,60 +297,25 @@ onAddScoreComplete = function(request, event)
 	if callback and callCallback == true then
     	callback(true, params)
     else
-		print("ParseLib.onAddScoreComplete", level, score)
+		print("ParseLib.onHandleScoreComplete", level, score)
     end
 end
 
-onAddScoreError = function(request)
+onHandleScoreError = function(request)
 	local callback = request.userRequest["Callback"]
 	local params = request.userRequest["Param"]
 	if callback then
 		callback(false, params)
 	else 
-		print("ParseLib.onAddScoreError: Unable to connect")
+		print("ParseLib.onHandleScoreError: Unable to connect")
 	end
 end
 
--- Add new score in world for current user. callback(bool)
-function ParseLib:internalAddScore(level, score, callback, params)
-	--print("ParseLib.addScore", level, score)
-	if (self.currentFacebookId == nil or self.userObjectId == nil) then
-		print("ParseLib.internalAddScore: ", "not logged in")
-		if callback then
-			callback(false, params)
-		end
-		return
-	end
-	local request = {}
-	request.internalRequest = {}
-	request.internalRequest["Callback"] = callback
-	request.internalRequest["Param"] = params
-	request.userRequest = {}
-	request.userRequest["Level"] = level
-	request.userRequest["Score"] = score
-	request.self = self
-	local function insertScoreSwitch(success, score, request)
-		--print("ParseLib.insertScoreSwitch", success, score)
-		request.userRequest["Param"] = request.internalRequest["Param"]
-		request.userRequest["Callback"] = request.internalRequest["Callback"]
-		local callback = request.userRequest["Callback"]
-		local params = request.userRequest["Param"]
-		local localScore = score
-		if success == true then
-			self:updateScore(localScore[1].objectId, request.userRequest["Score"], request.userRequest["Level"],
-				callback, params)
-		else
-			self:insertScore(request.userRequest["Score"], request.userRequest["Level"], callback, params)
-		end
-	end
-	self:getScore(level, nil, insertScoreSwitch, request)
-end
-
-function ParseLib:updateScore(scoreObjectId, score, level, callback, params)
-	--print("ParseLib.updateScore", scoreObjectId, score)
+function ParseLib:handleScore(level, score, callback, params)
 	local headers = self:getPostHeader()
-	local body = '{"score":'..score..',"quantity":{"__op":"Increment","amount":1}}'
-	local loader = UrlLoader.new(self.urls["score"].."/"..scoreObjectId, UrlLoader.PUT, headers, body)
+	local body = '{"table":{"score":"'..self.scoreClass..'","player":"'..self.playerClass..'"},"data":{"objectId":"'..self.userObjectId..'","level":'..level..',"score":'..score..'}}'
+	print("request: "..body)
+	local loader = UrlLoader.new("https://api.parse.com/1/functions/handleScore", UrlLoader.POST, headers, body)
 	local request = {}
 	request.userRequest = {}
 	request.userRequest["Callback"] = callback
@@ -357,22 +323,6 @@ function ParseLib:updateScore(scoreObjectId, score, level, callback, params)
 	request.userRequest["Level"] = level
 	request.userRequest["Score"] = score
 	request.self = self
-	loader:addEventListener(Event.COMPLETE, onAddScoreComplete, request)
-	loader:addEventListener(Event.ERROR, onAddScoreError, request)
-end
-
-function ParseLib:insertScore(score, level, callback, params)
-	--print("ParseLib.insertScore", score, level)
-	local headers = self:getPostHeader()
-	local body = '{"score":'..score..',"level":'..level..',"owner":{"__type":"Pointer","className":"'..self.playerClass..'","objectId":"'..self.userObjectId..'"},"quantity":1}'
-	local loader = UrlLoader.new(self.urls["score"], UrlLoader.POST, headers, body)
-	local request = {}
-	request.userRequest = {}
-	request.userRequest["Callback"] = callback
-	request.userRequest["Param"] = params
-	request.userRequest["Level"] = level
-	request.userRequest["Score"] = score
-	request.self = self
-	loader:addEventListener(Event.COMPLETE, onAddScoreComplete, request)
-	loader:addEventListener(Event.ERROR, onAddScoreError, request)
+	loader:addEventListener(Event.COMPLETE, onHandleScoreComplete, request)
+	loader:addEventListener(Event.ERROR, onHandleScoreError, request)
 end

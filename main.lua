@@ -59,20 +59,20 @@ end
 
 
 --Add score at specified level for logged in user.
---local l = {
---{level = "4", score = "1300"},
---{level = "6", score = "2500"},
---{level = "12", score = "240"},
---{level = "8", score = "100"}}
---print("do")
---for k, v in ipairs(l) do
---	print(v.level, v.score)
---end
---
---parse:login("10152817179103304",
---	function(success)
---		if (success) then print("addScore") parse:addScore(l, testAddScore) end
---	end)
+local l = {
+{level = 4, score = 13000},
+{level = 6, score = 25000},
+{level = 12, score = 240},
+{level = 8, score = 1000}}
+print("do")
+for k, v in ipairs(l) do
+	print(v.level, v.score)
+end
+parse = ParseLib.new(appId, apiKey, "ScoreTest", "PlayerTest")
+parse:login("10152817179103304",
+	function(success) print("HELLO")
+		if (success) then print("addScore") parse:addScore(l, testAddScore) end
+	end)
 
 
 --Get score
