@@ -30,7 +30,7 @@
 
 
 ParseLib = Core.class()
-
+ParseLibDebug = false
 function ParseLib:init(appId, apiKey, scoreTable, playerTable)
 	self.version = "1.1"
 	if scoreTable then
@@ -52,6 +52,12 @@ function ParseLib:init(appId, apiKey, scoreTable, playerTable)
 	self:resetUserData()
 end
 
+function debug(source, message)
+	if ParseLibDebug then
+		print(source..": ", message)
+	end
+end
+
 function ParseLib:resetUserData()
 	self.userObjectId = nil
 	self.currentFacebookId = nil
@@ -71,7 +77,7 @@ end
 onLoginComplete = function(request, event)
 	local callback = request.userRequest["Callback"]
 	local params = request.userRequest["Param"]
-	local user = Json.Decode(event.data)
+	local user = json.decode(event.data)
 	if user.results == nil then
 		if request.userRequest and callback then
 			callback(false, nil, params)
@@ -83,7 +89,7 @@ onLoginComplete = function(request, event)
 			if callback then
 				callback(false, nil, params)
 			else
-				print("ParseLib.onLoginComplete: Unable to create player")
+				debug("ParseLib.onLoginComplete", "Unable to create player")
 			end
 			return
 		end
@@ -95,7 +101,7 @@ onLoginComplete = function(request, event)
 		if callback then
 			callback(false, nil, params)
 		else
-			print("ParseLib.onLoginComplete: No object id")
+			debug("ParseLib.onLoginComplete","No object id")
 		end
 		return
 	end
@@ -103,7 +109,7 @@ onLoginComplete = function(request, event)
 		if callback then
 			callback(false, nil, params)
 		else
-			print("ParseLib.onLoginComplete: No object id")
+			debug("ParseLib.onLoginComplete","No object id")
 		end
 		return
 	end
@@ -117,7 +123,7 @@ end
 onLoginError = function(request)
 	local callback = request.userRequest["Callback"]
 	local params = request.userRequest["Param"]
-	print("ParseLib.onLoginError: Unable to connect")
+	debug("ParseLib.onLoginError","Unable to connect")
 	if callback then
 		callback(false, nil, params)
 	end
@@ -142,12 +148,12 @@ end
 onCreateComplete = function(request, event)
 	local callback = request.userRequest["Callback"]
 	local params = request.userRequest["Param"]
-	local user = Json.Decode(event.data)
+	local user = json.decode(event.data)
 	if user.createdAt == nil or user.objectId == nil then
 		if callback then
 			callback(false, nil, params)
 		else
-			print("ParseLib.onCreateComplete: ", event.data)
+			debug("ParseLib.onCreateComplete", event.data)
 		end
 		return
 	end
@@ -164,7 +170,7 @@ onCreateError = function(request)
 	if (callback) then
 		callback(false, nil, params)
 	else 
-		print("ParseLib.onCreateError")
+		debug("ParseLib.onCreateError","")
 	end
 end
 
@@ -189,11 +195,12 @@ onGetScoreComplete = function(request, event) -- tab = {self,player}
 	--print("ParseLib.onGetScoreComplete", event.data)
 	local callback = request.userRequest["Callback"]
 	local params = request.userRequest["Param"]
-	local scores = Json.Decode(event.data)
+	local scores = json.decode(event.data)
+	debug("ParseLib.onGetScoreComplete",event.data)
 	if scores == nil or scores.results == nil or #scores.results < 1 or 
 		scores.results[1].score == nil then
 		if callback then 
-			callback(false, nil, params)
+			callback(true, {}, params)
 			return
 		end
 	end
@@ -205,7 +212,7 @@ end
 onGetScoreError = function(request)
 	local callback = request.userRequest["Callback"]
 	local params = request.userRequest["Param"]
-	print("ParseLib.onGetScoreError: Unable to connect")
+	debug("ParseLib.onGetScoreError","Unable to connect")
 	if callback then
 		callback(false, {}, params)
 	end
@@ -225,7 +232,7 @@ function ParseLib:getScore(level, facebookId, callback, params)
 	body = body..'&include=owner&where={"owner":{"$inQuery":{"where":{"facebookId":'
 	if facebookId == nil then
 		if self.currentFacebookId == nil or self.userObjectId == nil then
-			print("ParseLib.getScore, not logged in")
+			debug("ParseLib.getScore", "not logged in")
 			if callback then
 				callback(false, params)
 			end
@@ -233,7 +240,7 @@ function ParseLib:getScore(level, facebookId, callback, params)
 		end
 		body = body..'"'..self.currentFacebookId..'"'
 	elseif #facebookId == 0 then
-		print("ParseLib.getScore", "no facebook id provided")
+		debug("ParseLib.getScore", "no facebook id provided")
 		callback(false, params)
 		return
 	elseif #facebookId < 2 then
@@ -263,7 +270,7 @@ end
 
 function ParseLib:addScore(levelScorePair, callback, params)
 	if (self.currentFacebookId == nil or self.userObjectId == nil) then
-		print("ParseLib.addScore: ", "not logged in")
+		debug("ParseLib.addScore", "not logged in")
 		if callback then
 			callback(false, params)
 		end
@@ -278,7 +285,8 @@ end
 onHandleScoreComplete = function(request, event)
 	local callback = request.userRequest["Callback"]
 	local params = request.userRequest["Param"]
-	local result = Json.Decode(event.data)
+	local result = json.decode(event.data)
+	debug("onHandleScoreComplete",event.data)
 	local level = result.result.level
 	local score = result.result.score
 	local callCallback = true
@@ -297,7 +305,7 @@ onHandleScoreComplete = function(request, event)
 	if callback and callCallback == true then
     	callback(true, params)
     else
-		print("ParseLib.onHandleScoreComplete", level, score)
+		debug("ParseLib.onHandleScoreComplete", "level: "..level..", score: "..score)
     end
 end
 
@@ -307,14 +315,14 @@ onHandleScoreError = function(request)
 	if callback then
 		callback(false, params)
 	else 
-		print("ParseLib.onHandleScoreError: Unable to connect")
+		debug("ParseLib.onHandleScoreError", "Unable to connect")
 	end
 end
 
 function ParseLib:handleScore(level, score, callback, params)
 	local headers = self:getPostHeader()
 	local body = '{"table":{"score":"'..self.scoreClass..'","player":"'..self.playerClass..'"},"data":{"objectId":"'..self.userObjectId..'","level":'..level..',"score":'..score..'}}'
-	print("request: "..body)
+	debug("ParseLib.handleScore", "request: "..body)
 	local loader = UrlLoader.new("https://api.parse.com/1/functions/handleScore", UrlLoader.POST, headers, body)
 	local request = {}
 	request.userRequest = {}
