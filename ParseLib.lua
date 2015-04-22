@@ -207,7 +207,7 @@ onGetScoreError = function(request)
 	local params = request.userRequest["Param"]
 	print("ParseLib.onGetScoreError: Unable to connect")
 	if callback then
-		callback(false, nil, params)
+		callback(false, {}, params)
 	end
 end
 
