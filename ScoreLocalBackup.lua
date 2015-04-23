@@ -31,6 +31,13 @@ function ScoreLocalBackup:loadFromParse(parse, facebookIdList, callback)
 	parse:getScore(nil, facebookIdList, onGetScore, self)
 end
 
+function ScoreLocalBackup:clear()
+	print("Clear")
+	self.scores = {}
+	self.pictures = {}
+	self:save()
+end
+
 function ScoreLocalBackup:save()
 	dataSaver.save(self.scoreFilename, self.scores)
 	dataSaver.save(self.picturesFilename, self.pictures)
