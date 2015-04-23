@@ -92,10 +92,19 @@ parse = ParseLib.new(appId, apiKey, "ScoreTest", "PlayerTest")
 parse.userObjectId = "7RsNg1uzPe"
 parse.currentFacebookId = "10204480970048216"
 --parse:getScore(nil, nil, testGetScore)
-test = {}
-test[1] = "10152817179103304"
-test[2] = "10204480970048216"
+test = {
+"10152817417013304",
+"10152837124006527",
+"10152643550940589",
+"10152785245570439",
+"10152388518528443",
+"10152817179103304",
+"10152978619666855",
+"10152869798117730",
+"10205229717006422",
+"10153157597253968"}
 local backup = ScoreLocalBackup.new()
+backup:clear()
 Timer.delayedCall(1000, function()
 	backup:loadFromParse(parse, test, function() 
 	end)
@@ -103,8 +112,8 @@ Timer.delayedCall(1000, function()
 end)
 
 
-Timer.delayedCall(5000, function()
-	backup:save()
+Timer.delayedCall(10000, function()
+	--backup:save()
 	backup:print()
 	local i = 0
 	for index, bmp in pairs(backup.pictures) do
