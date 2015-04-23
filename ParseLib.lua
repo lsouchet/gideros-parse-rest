@@ -1,4 +1,4 @@
--- ParseLib V1.1
+-- ParseLib V1.1.1
 -- https://github.com/lsouchet/gideros-parse-rest
 
 --Copyright (c) 2015, Lucas Souchet (https://github.com/lsouchet)
@@ -32,7 +32,7 @@
 ParseLib = Core.class()
 ParseLibDebug = false
 function ParseLib:init(appId, apiKey, scoreTable, playerTable)
-	self.version = "1.1"
+	self.version = "1.1.1"
 	if scoreTable then
 		self.scoreClass = scoreTable
 	else
@@ -223,7 +223,7 @@ end
 function ParseLib:getScore(level, facebookId, callback, params)
 	local headers = {[self.headerAppId["name"]] = self.headerAppId["key"],
 	 				[self.headerApiKey["name"]] = self.headerApiKey["key"]}
-	local body = '?order='
+	local body = '?limit=10000&order='
 	if level then
 		body = body..'score'
 	else
